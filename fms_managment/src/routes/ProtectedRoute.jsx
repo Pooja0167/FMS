@@ -1,29 +1,21 @@
-import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
+import Cookies from "js-cookie";
 
-// Wraps any route that requires auth
-// allowedPositions: array like ["ADMIN"] or ["CUSTOMER"] or ["ADMIN","CUSTOMER"]
-function ProtectedRoute({ children, allowedPositions = [] }) {
-  const { user } = useSelector((state) => state.auth);
+// Wraps any page/layout that needs a logged-in user with the right role.
+// Usage: <ProtectedRoute allowedPositions={["ADMIN"]}><AdminLayout /></ProtectedRoute>
+const ProtectedRoute = ({ children, allowedPositions = [] }) => {
+  const token = Cookies.get("access_token");
+  const position = Cookies.get("position");
 
-  // Not logged in at all → go to login
-  if (!user?.access) {
+  if (!token) {
     return <Navigate to="/" replace />;
   }
 
-  // Logged in but not allowed for this route → redirect to their home
-  if (allowedPositions.length > 0 && !allowedPositions.includes(user.position)) {
-    switch (user.position) {
-      case "ADMIN":
-        return <Navigate to="/admin/home" replace />;
-      case "CUSTOMER":
-        return <Navigate to="/customer/home" replace />;
-      default:
-        return <Navigate to="/" replace />;
-    }
+  if (allowedPositions.length && !allowedPositions.includes(position)) {
+    return <Navigate to="/" replace />;
   }
 
   return children;
-}
+};
 
 export default ProtectedRoute;

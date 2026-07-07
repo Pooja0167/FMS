@@ -1,22 +1,18 @@
-import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
+import Cookies from "js-cookie";
 
-// For pages like Login — if already logged in, skip straight to their dashboard
-function PublicRoute({ children }) {
-  const { user } = useSelector((state) => state.auth);
+// Wraps Login. If the user already has a valid session, skip the login
+// screen and send them straight to their home page.
+const PublicRoute = ({ children }) => {
+  const token = Cookies.get("access_token");
+  const position = Cookies.get("position");
 
-  if (user?.access && user?.position) {
-    switch (user.position) {
-      case "ADMIN":
-        return <Navigate to="/admin/home" replace />;
-      case "CUSTOMER":
-        return <Navigate to="/customer/home" replace />;
-      default:
-        return <Navigate to="/" replace />;
-    }
+  if (token) {
+    if (position === "ADMIN") return <Navigate to="/admin/home" replace />;
+    if (position === "CUSTOMER") return <Navigate to="/customer/home" replace />;
   }
 
   return children;
-}
+};
 
 export default PublicRoute;

@@ -1,16 +1,14 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-
 const api = axios.create({
-  baseURL: apiBaseUrl,
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-/* -----------------------------
-   REQUEST INTERCEPTOR
---------------------------------*/
-
+// Request Interceptor
 api.interceptors.request.use(
   (config) => {
     const token = Cookies.get("access_token");
@@ -21,43 +19,34 @@ api.interceptors.request.use(
 
     return config;
   },
-  (err) => Promise.reject(err),
+  (error) => Promise.reject(error)
 );
 
-/* -----------------------------
-   RESPONSE INTERCEPTOR (FIXED)
---------------------------------*/
-
+// Response Interceptor
 api.interceptors.response.use(
-  (res) => res,
-  (err) => {
-    if (err.response) {
-      const status = err.response.status;
+  (response) => response,
+  (error) => {
+    if (error.response) {
+      const status = error.response.status;
 
-      // ❌ Do NOT redirect during login
-      if (status === 401 && !err.config.url.includes("/")) {
-        console.log("Unauthorized request");
+      // Unauthorized
+      if (status === 401) {
+        Cookies.remove("access_token");
+        Cookies.remove("refresh_token");
+        Cookies.remove("username");
+        Cookies.remove("position");
 
-        const refreshToken = Cookies.get("refresh_token");
-
-        // Only logout if both tokens missing
-        if (!refreshToken) {
-          Cookies.remove("access_token");
-          Cookies.remove("refresh_token");
-          Cookies.remove("username");
-          Cookies.remove("position");
-          window.location.href = "/";
-        }
+        window.location.href = "/";
       }
 
-      // ❌ Do NOT force logout on 403
+      // Forbidden
       if (status === 403) {
-        console.warn("Permission denied:", err.response.data);
+        console.warn("Permission Denied");
       }
     }
 
-    return Promise.reject(err);
-  },
+    return Promise.reject(error);
+  }
 );
 
 export default api;

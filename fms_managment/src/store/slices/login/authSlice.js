@@ -22,17 +22,13 @@ export const loginUser = createAsyncThunk(
       Cookies.set("access_token", access, { expires: 1 });
       Cookies.set("refresh_token", refresh, { expires: 1 });
       Cookies.set("username", uname, { expires: 1 });
-
-      // position is optional (keep only if backend still sends it)
-      if (position) {
-        Cookies.set("position", position, { expires: 1 });
-      }
+      Cookies.set("position", position, { expires: 1 });
 
       return {
         access,
         refresh,
         username: uname,
-        position: position || null,
+        position,
       };
     } catch (error) {
       return rejectWithValue(
@@ -65,20 +61,24 @@ const authSlice = createSlice({
       Cookies.remove("username");
       Cookies.remove("position");
     },
+
     clearError(state) {
       state.error = null;
     },
   },
+
   extraReducers: (builder) => {
     builder
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
+
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
         state.user = action.payload;
       })
+
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
@@ -87,4 +87,5 @@ const authSlice = createSlice({
 });
 
 export const { logout, clearError } = authSlice.actions;
+
 export default authSlice.reducer;

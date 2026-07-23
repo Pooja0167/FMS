@@ -1,10 +1,14 @@
 import { Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
-
+import Feedback from "./pages/customer/Feedback";
+import CreateReviewform from "./pages/customer/CreateReviewform";
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
+ <Route path="/customer/feedback" element={<Feedback />} />
+  <Route path="/customer/feedback/form" element={<CreateReviewform/>} />
+
     </Routes>
   );
 }

@@ -40,7 +40,7 @@ const Login = () => {
       showTemporaryMessage("Login successfully!", "success");
 
       setTimeout(() => {
-        navigate("/manager/home");
+        navigate("/customer/feedback/form");
       }, 1000);
     }
   }, [user, navigate]);

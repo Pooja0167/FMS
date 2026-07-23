@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { logout } from "./../../store/slices/login/authSlice"
 import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
 
 import { fetchDemoForm } from "../../store/slices/login/reviewSlice";
-// NOTE: adjust this import path to wherever demoFormSlice actually lives in your project.
 import { fetchDemoStatus, updateDemoForm } from "../../store/slices/login/demoFormSlice";
 
 import logo from "../../assets/logo.png";
 import leaf from "../../assets/leaf.png";
+
 
 const DEMO_STARTED_CODE = "DEMO_STARTED";
 
@@ -184,18 +186,14 @@ function ProfileMenu() {
   const [open, setOpen] = useState(false);
   const [confirmingLogout, setConfirmingLogout] = useState(false);
 
-  // NOTE: swap this for however your app stores the logged-in user
-  // (e.g. useSelector((state) => state.auth.user)).
-  const userName = localStorage.getItem("user_name") || "User";
+ const dispatch = useDispatch();
+const { user } = useSelector((state) => state.auth);
+const userName = user?.username || Cookies.get("username") || "User";
   const initial = userName.charAt(0).toUpperCase();
-
-  const handleLogout = () => {
-    // NOTE: adjust to your actual auth teardown — clearing a token,
-    // dispatching a logout thunk/action, etc.
-    localStorage.removeItem("token");
-    localStorage.removeItem("user_name");
-    navigate("/");
-  };
+const handleLogout = () => {
+  dispatch(logout());
+  navigate("/", { replace: true });
+};
 
   return (
     <div className="relative">

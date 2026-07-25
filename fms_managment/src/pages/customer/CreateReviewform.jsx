@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { logout } from "./../../store/slices/login/authSlice"
+import { logout } from "./../../store/slices/login/authSlice";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 
@@ -9,7 +9,7 @@ import { fetchDemoStatus, updateDemoForm } from "../../store/slices/login/demoFo
 
 import logo from "../../assets/logo.png";
 import leaf from "../../assets/leaf.png";
-
+import mobileLeaf from "../../assets/mobile.png"; // Dynamic mobile template import
 
 const DEMO_STARTED_CODE = "DEMO_STARTED";
 
@@ -18,13 +18,26 @@ export default function CreateReviewform() {
   const navigate = useNavigate();
 
   const { demoforms } = useSelector((state) => state.review || {});
-  // NOTE: "demoForms" is the slice `name` in demoFormSlice.js — update this key if your
-  // store mounts it under a different name (e.g. combineReducers({ demoForms: ... })).
   const { demostatus } = useSelector((state) => state.demoForms || {});
 
   const [selectedDemoId, setSelectedDemoId] = useState("");
   const [selectedDemo, setSelectedDemo] = useState(null);
   const [starting, setStarting] = useState(false);
+
+  // Responsive state for mobile screen check
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth < 640 : false
+  );
+
+  // Handle screen resize to switch template dynamically
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Fetch demo list + demo status list on mount
   useEffect(() => {
@@ -52,18 +65,14 @@ export default function CreateReviewform() {
 
     setStarting(true);
     try {
-      // NOTE: this endpoint is a PUT, which usually expects the full resource
-      // rather than a partial patch — spreading selectedDemo keeps its other
-      // fields intact and only overrides demo_status. If your backend supports
-      // PATCH instead, you can drop the spread and send just { demo_status }.
       await dispatch(
         updateDemoForm({
           id: selectedDemoId,
           formData: { ...selectedDemo, demo_status: startedStatus.id },
-        }),
+        })
       ).unwrap();
 
-    navigate("/customer/feedback", { state: { demoId: selectedDemoId } });
+      navigate("/customer/feedback", { state: { demoId: selectedDemoId } });
     } catch (err) {
       console.error("Failed to start demo:", err);
     } finally {
@@ -72,104 +81,108 @@ export default function CreateReviewform() {
   };
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col select-none overflow-hidden">
+    <div className="fixed inset-0 bg-black flex flex-col select-none overflow-hidden h-screen w-screen">
       <style>{`
-        html, body { margin: 0; padding: 0; background: #000; overflow: hidden; }
+        html, body { margin: 0; padding: 0; background: #000; overflow: hidden; height: 100vh; width: 100vw; }
         @keyframes emoti-pop {
           0%   { transform: scale(0.7); opacity: 0; }
           100% { transform: scale(1);   opacity: 1; }
         }
       `}</style>
 
-      <div className="flex-1 min-h-0 flex items-center justify-center pt-1.5 pl-1.5 pr-1.5 sm:pt-2 sm:pl-2 sm:pr-2 md:pt-2.5 md:pl-2.5 md:pr-2.5 lg:pt-3 lg:pl-3 lg:pr-3 pb-0 overflow-hidden">
-        <div className="w-full h-full flex items-stretch justify-center gap-1 sm:gap-2 md:gap-4 lg:gap-6">
-          <div className="flex-1 h-full flex items-stretch justify-center">
-            {/* Main Card Container */}
-            <div
-              className="relative w-full h-full rounded-2xl shadow-2xl px-5 pt-4 pb-8 sm:px-8 sm:pt-6 sm:pb-10 md:px-10 md:pt-8 md:pb-12 lg:px-14 lg:pt-10 lg:pb-14 flex flex-col overflow-hidden"
-              style={{
-                backgroundImage: `url(${leaf})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                backgroundRepeat: "no-repeat",
-              }}
-            >
-              {/* Logo */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center">
-                <img
-                  src={logo}
-                  alt="Emoti Cup Logo"
-                  className="w-36 h-36 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 object-contain"
-                />
-              </div>
+      <div className="flex-1 min-h-0 flex items-center justify-center p-1.5 sm:p-2 md:p-2.5 lg:p-3 overflow-hidden">
+        <div className="w-full h-full flex items-stretch justify-center">
+          {/* Main Card Container with Dynamic Mobile/Desktop Background */}
+          <div
+            className="relative w-full h-full rounded-2xl shadow-2xl px-5 pt-4 pb-8 sm:px-8 sm:pt-6 sm:pb-10 md:px-10 md:pt-8 md:pb-12 lg:px-14 lg:pt-10 lg:pb-14 flex flex-col overflow-hidden"
+            style={{
+              backgroundImage: `url(${isMobile ? mobileLeaf : leaf})`,
+              backgroundSize: "100% 100%", // Ensures template borders fit cleanly
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }}
+          >
+            {/* Logo */}
+            <div className="absolute top-20 sm:top-20 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center">
+              <img
+                src={logo}
+                alt="Emoti Cup Logo"
+                className="w-36 h-24 sm:w-44 sm:h-28 md:w-52 md:h-32 lg:w-60 lg:h-36 object-contain"
+              />
+            </div>
 
-              {/* Profile / Logout */}
-              <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-40">
-                <ProfileMenu />
-              </div>
+            {/* Profile / Logout */}
+            <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-40">
+              <ProfileMenu />
+            </div>
 
-              {/* Demo Selection */}
-              <div className="relative z-10 flex-1 flex flex-col justify-center pt-12 sm:pt-16 md:pt-20 lg:pt-24">
-                <div
-                  style={{ animation: "emoti-pop .35s ease" }}
-                  className="flex flex-col items-center w-full max-w-lg mx-auto"
+            {/* Demo Selection Area */}
+            <div className="relative z-10 flex-1 flex flex-col justify-center pt-8 sm:pt-12 md:pt-16">
+              <div
+                style={{ animation: "emoti-pop .35s ease" }}
+                className="flex flex-col items-center w-full max-w-xs sm:max-w-sm mx-auto px-2"
+              >
+                <p className="text-center text-xs uppercase tracking-widest text-black font-bold mb-3">
+                  Select Demo Details
+                </p>
+
+                {/* Compact Dropdown Select */}
+                <select
+                  value={selectedDemoId}
+                  onChange={handleDemoChange}
+                  className="w-full max-w-[260px] sm:max-w-[300px] border-2 border-amber-400 rounded-lg py-1.5 px-3 text-xs sm:text-sm text-black bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 mb-3 shadow-sm font-medium"
                 >
-                  <p className="text-center text-xs sm:text-sm lg:text-base uppercase tracking-widest text-gray-700 font-bold mb-4">
-                    Select Demo Details
-                  </p>
+                  <option value="">-- Choose Demo Name --</option>
+                  {demoforms &&
+                    demoforms.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.demo_name || `Demo #${d.id}`}
+                      </option>
+                    ))}
+                </select>
 
-                  <select
-                    value={selectedDemoId}
-                    onChange={handleDemoChange}
-                    className="w-full border border-gray-300 rounded-lg p-2.5 text-xs sm:text-sm text-black bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 mb-4"
-                  >
-                    <option value="">-- Choose Demo Name --</option>
-                    {demoforms &&
-                      demoforms.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.demo_name || `Demo #${d.id}`}
-                        </option>
-                      ))}
-                  </select>
-
-                  {/* Fetched Details Display */}
-                  {selectedDemo && (
-                    <div className="w-full bg-white/80 backdrop-blur-sm border border-amber-200 rounded-xl p-4 text-xs sm:text-sm text-gray-700 space-y-2 mb-4 shadow-sm">
-                      <div className="flex justify-between">
-                        <span className="font-semibold text-amber-800">Date:</span>
-                        <span>{selectedDemo.demo_date || "N/A"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-semibold text-amber-800">Customer:</span>
-                        <span>{selectedDemo.contact_person_name1 || "N/A"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-semibold text-amber-800">Start Time:</span>
-                        <span>{selectedDemo.demo_start || "N/A"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-semibold text-amber-800">End Time:</span>
-                        <span>{selectedDemo.demo_end || "N/A"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-semibold text-amber-800">Location:</span>
-                        <span className="text-right">{selectedDemo.address_line1 || "N/A"}</span>
-                      </div>
+                {/* Compact Fetched Details Box */}
+                {selectedDemo && (
+                  <div className="w-full max-w-[260px] sm:max-w-[300px] bg-white border border-gray-200 rounded-lg p-2.5 text-xs text-black space-y-1 mb-3 shadow-sm">
+                    <div className="flex justify-between">
+                      <span className="font-semibold text-gray-600">Date:</span>
+                      <span className="font-medium text-black">{selectedDemo.demo_date || "N/A"}</span>
                     </div>
-                  )}
+                    <div className="flex justify-between">
+                      <span className="font-semibold text-gray-600">Customer:</span>
+                      <span className="font-medium text-black truncate max-w-[120px] text-right">
+                        {selectedDemo.contact_person_name1 || "N/A"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-semibold text-gray-600">Start Time:</span>
+                      <span className="font-medium text-black">{selectedDemo.demo_start || "N/A"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-semibold text-gray-600">End Time:</span>
+                      <span className="font-medium text-black">{selectedDemo.demo_end || "N/A"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-semibold text-gray-600">Location:</span>
+                      <span className="font-medium text-black truncate max-w-[120px] text-right">
+                        {selectedDemo.address_line1 || "N/A"}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
-                  <button
-                    disabled={!selectedDemoId || starting}
-                    onClick={handleDrive}
-                    className={`w-full py-2.5 rounded-lg font-bold text-sm lg:text-base transition shadow-sm ${
-                      selectedDemoId && !starting
-                        ? "bg-amber-400 hover:bg-amber-500 text-black"
-                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    }`}
-                  >
-                    {starting ? "Starting..." : "Drive"}
-                  </button>
-                </div>
+                {/* Compact Drive Button */}
+                <button
+                  disabled={!selectedDemoId || starting}
+                  onClick={handleDrive}
+                  className={`w-full max-w-[160px] py-1.5 rounded-lg font-bold text-xs sm:text-sm transition shadow-sm ${
+                    selectedDemoId && !starting
+                      ? "bg-amber-400 hover:bg-amber-500 text-black active:scale-95"
+                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  }`}
+                >
+                  {starting ? "Starting..." : "Drive"}
+                </button>
               </div>
             </div>
           </div>
@@ -186,20 +199,21 @@ function ProfileMenu() {
   const [open, setOpen] = useState(false);
   const [confirmingLogout, setConfirmingLogout] = useState(false);
 
- const dispatch = useDispatch();
-const { user } = useSelector((state) => state.auth);
-const userName = user?.username || Cookies.get("username") || "User";
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
+  const userName = user?.username || Cookies.get("username") || "User";
   const initial = userName.charAt(0).toUpperCase();
-const handleLogout = () => {
-  dispatch(logout());
-  navigate("/", { replace: true });
-};
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate("/", { replace: true });
+  };
 
   return (
     <div className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 bg-white/85 hover:bg-white rounded-full pl-1 pr-2.5 py-1 shadow-sm border border-gray-200 transition"
+        className="flex items-center gap-1.5 bg-white/90 hover:bg-white rounded-full pl-1 pr-3 py-1 shadow-sm border border-gray-200 transition"
       >
         <span className="w-6 h-6 rounded-full bg-amber-400 text-black text-[11px] font-bold flex items-center justify-center">
           {initial}
@@ -211,7 +225,6 @@ const handleLogout = () => {
 
       {open && (
         <>
-          {/* Click-away overlay */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 mt-1.5 w-32 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50">
             <button
@@ -227,23 +240,24 @@ const handleLogout = () => {
         </>
       )}
 
+      {/* Compact Logout Confirmation Modal */}
       {confirmingLogout && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-xs p-5 text-center">
-            <p className="text-sm font-semibold text-gray-800 mb-1">Log out?</p>
-            <p className="text-xs text-gray-500 mb-4">
-              Are you sure you want to exit this page?
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-[220px] sm:max-w-[240px] p-4 text-center border border-gray-100">
+            <p className="text-xs font-bold text-black mb-1">Log out?</p>
+            <p className="text-[11px] text-gray-500 mb-3">
+              Are you sure you want to exit?
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setConfirmingLogout(false)}
-                className="flex-1 py-2 rounded-lg text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 transition"
+                className="flex-1 py-1 rounded-lg text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-black transition"
               >
                 Cancel
               </button>
               <button
                 onClick={handleLogout}
-                className="flex-1 py-2 rounded-lg text-xs font-semibold bg-red-500 hover:bg-red-600 text-white transition"
+                className="flex-1 py-1 rounded-lg text-xs font-semibold bg-amber-400 hover:bg-amber-500 text-black transition"
               >
                 Log Out
               </button>
@@ -257,7 +271,7 @@ const handleLogout = () => {
 
 function Footer() {
   return (
-    <footer className="shrink-0 w-full bg-[#1f2937] px-4 py-2.5">
+    <footer className="shrink-0 w-full bg-[#0b1320] px-4 py-2.5">
       <div className="flex flex-wrap items-center gap-x-2 text-[10px] sm:text-xs text-gray-300">
         <span>Copyright All Rights Reserved © {new Date().getFullYear()} emoticup.com</span>
         <span className="text-gray-500">|</span>
